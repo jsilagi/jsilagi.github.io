@@ -11,21 +11,17 @@ redirect_from:
 
 Education
 ======
-* Ph.D in Version Control Theory, GitHub University, 2018 (expected)
-* M.S. in Jekyll, GitHub University, 2014
-* B.S. in GitHub, GitHub University, 2012
+* B.A. in Political Science, Math & Computer Science, Washington University in St. Louis, 2023
 
 Work experience
 ======
-* Spring 2024: Academic Pages Collaborator
-  * Github University
-  * Duties includes: Updates and improvements to template
-  * Supervisor: The Users
+* 2023 - Present: Data Scientist, Consultant
+  * Booz Allen Hamilton
+  * Data Scientist supporting intelligence account.
 
-* Fall 2015: Research Assistant
-  * Github University
-  * Duties included: Merging pull requests
-  * Supervisor: Professor Hub
+* 2022 - 2023: Honors Intern
+  * Federal Bureau of Investigation
+  * Served as a computer scientist on cyber squad based out of the St. Louis field office.
 
 * Summer 2015: Research Assistant
   * Github University
