@@ -1,0 +1,36 @@
+title: "Your Name"
+description: "Personal website"
+remote_theme: "mmistakes/minimal-mistakes"
+
+minimal_mistakes_skin: default
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-paginate
+  - jekyll-include-cache
+
+paginate: 5
+
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "single"
+
+collections:
+  projects:
+    output: true
+    permalink: /projects/:path/
+
+# Site navigation
+nav:
+  - title: "Home"
+    url: /
+  - title: "About"
+    url: /about/
+  - title: "Projects"
+    url: /projects/
+  - title: "Blog"
+    url: /blog/
