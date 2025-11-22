@@ -9,6 +9,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 maxZoom: 19,
 }).addTo(map);
 
+const busIcon = L.icon({
+    iconUrl: "bus.png",   // Bus icons created by Pixel perfect - Flaticon (https://www.flaticon.com/free-icons/bus)
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+});
+
 // Store markers by vehicle ID
 let markers = {};
 
@@ -70,4 +77,4 @@ function updateMarkers(vehicles) {
 
 
 fetchVehicles();    // load immediately
-setInterval(fetchVehicles, 5000);   // refresh every 15 seconds
+setInterval(fetchVehicles, 5000);   // refresh every 5 seconds
