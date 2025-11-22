@@ -12,6 +12,27 @@ maxZoom: 19,
 // Store markers by vehicle ID
 let markers = {};
 
+// Animation function
+function animateMarker(marker, fromLatLng, toLatLng, duration = 1500) {
+    const start = performance.now();
+
+    function frame(time) {
+        const progress = Math.min((time - start) / duration, 1);
+
+        const lat = fromLatLng.lat + (toLatLng.lat - fromLatLng.lat) * progress;
+        const lng = fromLatLng.lng + (toLatLng.lng - fromLatLng.lng) * progress;
+
+        marker.setLatLng([lat, lng]);
+
+        if (progress < 1) {
+            requestAnimationFrame(frame);
+        }
+    }
+
+    requestAnimationFrame(frame);
+}
+
+
 // Fetch vehicles from Flask backend
 async function fetchVehicles() {
   try {
@@ -26,30 +47,27 @@ async function fetchVehicles() {
 
 // Update markers on the map
 function updateMarkers(vehicles) {
-  // clear old markers
-  for (const id in markers) {
-    map.removeLayer(markers[id]);
-  }
-  markers = {};
+    vehicles.forEach(v => {
+        const id = v.id;
+        const lat = v.position.latitude;
+        const lng = v.position.longitude;
 
-  // add updated markers
-  vehicles.forEach(v => {
-    if (!v.position) return;
+        const newPos = L.latLng(lat, lng);
 
-    const lat = v.position.latitude;
-    const lon = v.position.longitude;
-
-    // add marker
-    const marker = L.marker([lat, lon]).addTo(map);
-    marker.bindPopup(`
-      Route: ${v.trip?.route_id || "?"}<br>
-      Vehicle: ${v.id}
-    `);
-
-    markers[v.id] = marker;
+        // If marker already exists, animate it
+        if (markers[id]) {
+            const oldPos = markers[id].getLatLng();
+            animateMarker(markers[id], oldPos, newPos);
+        } 
+        else {
+            // Create new marker if it doesn't exist
+            const marker = L.marker([lat, lng], { icon: busIcon });
+            marker.addTo(map);
+            markers[id] = marker;
+        }
     });
 }
 
 
 fetchVehicles();    // load immediately
-setInterval(fetchVehicles, 15000);   // refresh every 15 seconds
+setInterval(fetchVehicles, 5000);   // refresh every 15 seconds
