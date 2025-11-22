@@ -55,25 +55,48 @@ async function fetchVehicles() {
 // Update markers on the map
 function updateMarkers(vehicles) {
     vehicles.forEach(v => {
-        const id = v.id;
+        // Use stable ID (trip-based)
+        const id = v.trip?.trip_id || v.id;
+
         const lat = v.position.latitude;
         const lng = v.position.longitude;
 
         const newPos = L.latLng(lat, lng);
 
-        // If marker already exists, animate it
+        // If marker exists, animate unless jump is huge
         if (markers[id]) {
             const oldPos = markers[id].getLatLng();
-            animateMarker(markers[id], oldPos, newPos);
-        } 
+            const distance = oldPos.distanceTo(newPos); // meters
+
+            if (distance < 200) {
+                // smooth animation
+                animateMarker(markers[id], oldPos, newPos, 1500);
+            } else {
+                // large jump, snap to new location
+                markers[id].setLatLng(newPos);
+            }
+        }
         else {
-            // Create new marker if it doesn't exist
-            const marker = L.marker([lat, lng], { icon: busIcon });
+            // Create new marker
+            const marker = L.marker(newPos, { icon: busIcon });
             marker.addTo(map);
             markers[id] = marker;
         }
     });
+
+    // Remove markers that are no longer in the feed
+    Object.keys(markers).forEach(id => {
+        const stillExists = vehicles.some(
+            v => (v.trip?.trip_id || v.id) === id
+        );
+
+        if (!stillExists) {
+            map.removeLayer(markers[id]);
+            delete markers[id];
+        }
+    });
 }
+
 
 
 fetchVehicles();    // load immediately
