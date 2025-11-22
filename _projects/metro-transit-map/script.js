@@ -1,7 +1,6 @@
-// --------------------------------------
-// CONFIG — INSERT YOUR REAL FEED URLS
-// --------------------------------------
-const VEHICLE_POSITIONS_URL = "http://localhost:5000/vehicles";
+// Vehicle positions
+// const VEHICLE_POSITIONS_URL = "http://localhost:5000/vehicles";
+const VEHICLE_POSITIONS_URL = "https://metro-transit-map-backend.onrender.com/vehicles"
 
 // STL map center
 const map = L.map('map').setView([38.6270, -90.1994], 12);
