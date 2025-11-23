@@ -68,7 +68,7 @@ function updateMarkers(vehicles) {
             const oldPos = markers[id].getLatLng();
             const distance = oldPos.distanceTo(newPos); // meters
 
-            if (distance < 200) {
+            if (distance < 800) {
                 // smooth animation
                 animateMarker(markers[id], oldPos, newPos, 1500);
             } else {
@@ -96,7 +96,6 @@ function updateMarkers(vehicles) {
         }
     });
 }
-
 
 
 fetchVehicles();    // load immediately
