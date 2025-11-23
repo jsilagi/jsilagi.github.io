@@ -49,7 +49,6 @@ async function fetchVehicles() {
     const data = await response.json();
 
     lastFetchTime = Date.now();
-    updateLastUpdatedLabel();
 
     updateMarkers(data.data);
   } catch (err) {
