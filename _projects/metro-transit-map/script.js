@@ -19,18 +19,8 @@ const busIcon = L.icon({
 // Store markers by vehicle ID
 let markers = {};
 // Keep track of how often vehicle locations are updated
-let lastFetchTime = null;
+let vehicleTimestamps = {};
 
-
-function updateLastUpdatedLabel() {
-    if (!lastFetchTime) return;
-
-    const now = Date.now();
-    const diffSec = Math.floor((now - lastFetchTime) / 1000);
-
-    const label = document.getElementById("last-updated");
-    label.textContent = `Last updated: ${diffSec} seconds ago`;
-}
 
 // Animation function
 function animateMarker(marker, fromLatLng, toLatLng, duration = 1500) {
@@ -67,6 +57,18 @@ async function fetchVehicles() {
   }
 }
 
+// Make the popup when the bus is clicked on
+function generatePopupHTML(v) {
+    const age = Math.floor((Date.now() / 1000) - vehicleTimestamps[v.id]);
+
+    return `
+        <b>${v.label}</b><br>
+        Route: ${v.trip.route_id}<br>
+        Trip ID: ${v.trip.trip_id}<br>
+        Last update: <span class="age-${v.id}">${age}</span> seconds ago
+    `;
+}
+
 // Update markers on the map
 function updateMarkers(vehicles) {
     vehicles.forEach(v => {
@@ -78,28 +80,27 @@ function updateMarkers(vehicles) {
 
         const newPos = L.latLng(lat, lng);
 
+        // Save the vehicle's update timestamp (seconds)
+        vehicleTimestamps[id] = v.timestamp;
+
         // If marker exists, animate unless jump is huge
         if (markers[id]) {
             const oldPos = markers[id].getLatLng();
             const distance = oldPos.distanceTo(newPos); // meters
-
             if (distance < 800) {
                 // smooth animation
                 animateMarker(markers[id], oldPos, newPos, 1500);
+                markers[id].bindPopup(generatePopupHTML(v));
             } else {
                 // large jump, snap to new location
                 markers[id].setLatLng(newPos);
+                markers[id].bindPopup(generatePopupHTML(v));
             }
         }
+        // If marker doesn't exist, create it
         else {
-            // Create new marker
             const marker = L.marker(newPos, { icon: busIcon });
-            marker.bindPopup(`
-                <b>${v.label}</b><br>
-                Route: ${v.trip.route_id}<br>
-                Trip ID: ${v.trip.trip_id}<br>
-                Last update: ${Math.floor((Date.now() / 1000) - v.timestamp)} seconds ago
-            `);
+            marker.bindPopup(generatePopupHTML(v));  
             marker.addTo(map);
             markers[id] = marker;
         }
@@ -121,4 +122,12 @@ function updateMarkers(vehicles) {
 
 fetchVehicles();    // load immediately
 setInterval(fetchVehicles, 5000);   // refresh vehicles every 5 seconds
-setInterval(updateLastUpdatedLabel, 1000); // refresh last updated every 1 second
+setInterval(() => { // update timer in the marker
+    const now = Date.now() / 1000;
+
+    for (const id in vehicleTimestamps) {
+        const age = Math.floor(now - vehicleTimestamps[id]);
+        const el = document.querySelector(`.age-${id}`);
+        if (el) el.textContent = age;
+    }
+}, 1000);
