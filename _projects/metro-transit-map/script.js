@@ -18,6 +18,19 @@ const busIcon = L.icon({
 
 // Store markers by vehicle ID
 let markers = {};
+// Keep track of how often vehicle locations are updated
+let lastFetchTime = null;
+
+
+function updateLastUpdatedLabel() {
+    if (!lastFetchTime) return;
+
+    const now = Date.now();
+    const diffSec = Math.floor((now - lastFetchTime) / 1000);
+
+    const label = document.getElementById("last-updated");
+    label.textContent = `Last updated: ${diffSec} seconds ago`;
+}
 
 // Animation function
 function animateMarker(marker, fromLatLng, toLatLng, duration = 1500) {
@@ -39,12 +52,14 @@ function animateMarker(marker, fromLatLng, toLatLng, duration = 1500) {
     requestAnimationFrame(frame);
 }
 
-
 // Fetch vehicles from Flask backend
 async function fetchVehicles() {
   try {
     const response = await fetch(VEHICLE_POSITIONS_URL);
     const data = await response.json();
+
+    lastFetchTime = Date.now();
+    updateLastUpdatedLabel();
 
     updateMarkers(data.data);
   } catch (err) {
@@ -79,6 +94,12 @@ function updateMarkers(vehicles) {
         else {
             // Create new marker
             const marker = L.marker(newPos, { icon: busIcon });
+            marker.bindPopup(`
+                <b>${v.label}</b><br>
+                Route: ${v.trip.route_id}<br>
+                Trip ID: ${v.trip.trip_id}<br>
+                Last update: ${Math.floor((Date.now() / 1000) - v.timestamp)} seconds ago
+            `);
             marker.addTo(map);
             markers[id] = marker;
         }
@@ -99,4 +120,5 @@ function updateMarkers(vehicles) {
 
 
 fetchVehicles();    // load immediately
-setInterval(fetchVehicles, 5000);   // refresh every 5 seconds
+setInterval(fetchVehicles, 5000);   // refresh vehicles every 5 seconds
+setInterval(updateLastUpdatedLabel, 1000); // refresh last updated every 1 second
