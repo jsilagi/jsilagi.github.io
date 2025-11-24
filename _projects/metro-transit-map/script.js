@@ -55,7 +55,7 @@ async function fetchBuses() {
 }
 
 // Popup HTML
-function generateBusPopupHTML(v, id) {
+function generateBusPopup(v, id) {
     const ts = vehicleTimestamps[id];
     const age = Math.floor(Date.now() / 1000 - ts);
 
@@ -94,13 +94,13 @@ function updateBusMarkers(vehicles) {
             } else {
                 busMarkers[id].setLatLng(newPos);
             }
-            busMarkers[id].bindPopup(generatePopupHTML(v, id));
+            busMarkers[id].bindPopup(generateBusPopup(v, id));
         }
 
         // If marker does not exist
         else {
             const marker = L.marker(newPos, { icon: busIcon });
-            marker.bindPopup(generatePopupHTML(v, id));
+            marker.bindPopup(generateBusPopup(v, id));
             marker.addTo(map);
             busMarkers[id] = marker;
         }
