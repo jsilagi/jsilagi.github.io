@@ -1,12 +1,11 @@
 // Vehicle positions
-// const VEHICLE_POSITIONS_URL = "http://localhost:5000/vehicles";
-const VEHICLE_POSITIONS_URL = "https://metro-transit-map-backend.onrender.com/vehicles"
+const VEHICLE_POSITIONS_URL = "https://metro-transit-map-backend.onrender.com/vehicles";
 
 // STL map center
 const map = L.map('map').setView([38.6270, -90.1994], 12);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-maxZoom: 19,
+    maxZoom: 19,
 }).addTo(map);
 
 const busIcon = L.icon({
@@ -16,9 +15,8 @@ const busIcon = L.icon({
     popupAnchor: [0, -16]
 });
 
-// Store markers by vehicle ID
+// Store markers + timestamps
 let markers = {};
-// Keep track of how often vehicle locations are updated
 let vehicleTimestamps = {};
 
 
@@ -34,9 +32,7 @@ function animateMarker(marker, fromLatLng, toLatLng, duration = 1500) {
 
         marker.setLatLng([lat, lng]);
 
-        if (progress < 1) {
-            requestAnimationFrame(frame);
-        }
+        if (progress < 1) requestAnimationFrame(frame);
     }
 
     requestAnimationFrame(frame);
@@ -44,68 +40,71 @@ function animateMarker(marker, fromLatLng, toLatLng, duration = 1500) {
 
 // Fetch vehicles from Flask backend
 async function fetchVehicles() {
-  try {
-    const response = await fetch(VEHICLE_POSITIONS_URL);
-    const data = await response.json();
-
-    lastFetchTime = Date.now();
-
-    updateMarkers(data.data);
-  } catch (err) {
-    console.error("Error fetching vehicles:", err);
-  }
+    try {
+        const response = await fetch(VEHICLE_POSITIONS_URL);
+        const data = await response.json();
+        updateMarkers(data.data);
+    } catch (err) {
+        console.error("Error fetching vehicles:", err);
+    }
 }
 
-// Make the popup when the bus is clicked on
-function generatePopupHTML(v) {
-    const age = Math.floor((Date.now() / 1000) - vehicleTimestamps[v.id]);
+
+// Popup HTML
+function generatePopupHTML(v, id) {
+    const ts = vehicleTimestamps[id];        // timestamp in seconds
+    const age = Math.floor(Date.now() / 1000 - ts);
 
     return `
         <b>${v.label}</b><br>
         Route: ${v.trip.route_id}<br>
-        Trip ID: ${v.trip.trip_id}<br>
-        Last update: <span class="age-${v.id}">${age}</span> seconds ago
+        Vehicle ID: ${id}<br>
+        Last update: 
+        <span class="age-${id}">
+            ${age}
+        </span> seconds ago
     `;
 }
 
-// Update markers on the map
+
+// Update markers
 function updateMarkers(vehicles) {
     vehicles.forEach(v => {
-        // Use stable ID (trip-based)
+        // USE ONE CONSISTENT ID ACROSS EVERYTHING
         const id = v.trip?.trip_id || v.id;
 
         const lat = v.position.latitude;
         const lng = v.position.longitude;
-
         const newPos = L.latLng(lat, lng);
 
-        // Save the vehicle's update timestamp (seconds)
+        // Save timestamp (backend gives seconds)
         vehicleTimestamps[id] = v.timestamp;
 
-        // If marker exists, animate unless jump is huge
+        // If marker exists
         if (markers[id]) {
             const oldPos = markers[id].getLatLng();
-            const distance = oldPos.distanceTo(newPos); // meters
+            const distance = oldPos.distanceTo(newPos);
+            // Animate if the jump is not huge
             if (distance < 800) {
-                // smooth animation
-                animateMarker(markers[id], oldPos, newPos, 1500);
-                markers[id].bindPopup(generatePopupHTML(v));
+                animateMarker(markers[id], oldPos, newPos);
+            // Otherwise just place it
             } else {
-                // large jump, snap to new location
                 markers[id].setLatLng(newPos);
-                markers[id].bindPopup(generatePopupHTML(v));
             }
+
+            markers[id].bindPopup(generatePopupHTML(v, id));
         }
-        // If marker doesn't exist, create it
+
+        // If marker does not exist
         else {
             const marker = L.marker(newPos, { icon: busIcon });
-            marker.bindPopup(generatePopupHTML(v));  
+            marker.bindPopup(generatePopupHTML(v, id));
             marker.addTo(map);
             markers[id] = marker;
         }
     });
 
-    // Remove markers that are no longer in the feed
+    // Remove missing vehicles
     Object.keys(markers).forEach(id => {
         const stillExists = vehicles.some(
             v => (v.trip?.trip_id || v.id) === id
@@ -119,14 +118,19 @@ function updateMarkers(vehicles) {
 }
 
 
-fetchVehicles();    // load immediately
-setInterval(fetchVehicles, 5000);   // refresh vehicles every 5 seconds
-setInterval(() => { // update timer in the marker
+// Intervals
+fetchVehicles();
+setInterval(fetchVehicles, 5000); // Fetch every 5 sec
+
+// Update the "Last update X seconds ago" text every 1 sec
+setInterval(() => {
     const now = Date.now() / 1000;
 
-    for (const id in vehicleTimestamps) {
-        const age = Math.floor(now - vehicleTimestamps[id]);
+    Object.keys(vehicleTimestamps).forEach(id => {
         const el = document.querySelector(`.age-${id}`);
-        if (el) el.textContent = age;
-    }
+        if (el) {
+            const age = Math.floor(now - vehicleTimestamps[id]);
+            el.textContent = age;
+        }
+    });
 }, 1000);
